@@ -28,6 +28,7 @@ class Scheduler:
         self.col = col
         self.queueLimit = 50
         self.reportLimit = 1000
+        #reps   number of reviews
         self.reps = 0
         self.today = None
         self._haveQueues = False
@@ -54,7 +55,14 @@ class Scheduler:
         self._resetNew()
         self._haveQueues = True
 
+
     def answerCard(self, card, ease):
+        """
+        :param card:
+        :param ease: which button you pushed to score your recall.<br>
+                    review:  1(wrong), 2(hard), 3(ok), 4(easy)<br>
+                    learn/relearn:   1(wrong), 2(ok), 3(easy)
+        """
         self.col.log()
         assert 1 <= ease <= 4
         self.col.markReview(card)
@@ -66,10 +74,21 @@ class Scheduler:
         wasNewQ = card.queue == 0
         if wasNewQ:
             # came from the new queue, move to learning
+            #   queue
+            #       -- -3=sched buried, -2=user buried, -1=suspended,
+            #       -- 0=new, 1=learning, 2=due (as for type)
+            #       -- 3=in learning, next rev in at least a day after the previous review
+            # 设置为 learning
             card.queue = 1
+            # type    0=new, 1=learning, 2=due, 3=filtered
+            # 如果是  new  设为  learning
             # if it was a new card, it's now a learning card
             if card.type == 0:
                 card.type = 1
+
+            #  left -- of the form a*1000+b, with:
+            #       -- b the number of reps left till graduation
+            #       -- a the number of reps left today
             # init reps to graduation
             card.left = self._startingLeft(card)
             # dynamic?
